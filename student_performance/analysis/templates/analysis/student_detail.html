@@ -1,0 +1,167 @@
+{% extends "analysis/base.html" %}
+
+{% block title %}{{ student.name }} - PerformanceHub{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <a href="{% url 'student_list' %}" class="btn btn-outline-custom btn-sm mb-3">
+        <i class="bi bi-arrow-left me-1"></i> Back to Students
+    </a>
+    <div class="d-flex align-items-center gap-3 flex-wrap">
+        <div class="student-avatar" style="width:64px;height:64px;font-size:1.5rem;border-radius:18px;">
+            {{ student.name|first }}
+        </div>
+        <div>
+            <h1 class="mb-0">{{ student.name }}</h1>
+            <p class="mb-0">
+                <span class="text-secondary">{{ student.student_class }}</span>
+                <span class="mx-2 text-secondary">·</span>
+                <span class="text-secondary">{{ student.email }}</span>
+            </p>
+        </div>
+        <div class="ms-auto d-flex gap-2">
+            <a href="{% url 'student_edit' student.pk %}" class="btn btn-outline-custom btn-sm">
+                <i class="bi bi-pencil me-1"></i> Edit
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="row g-4 mb-4">
+    <div class="col-md-4 fade-in-up">
+        <div class="glass-card stat-card primary">
+            <div class="stat-icon primary"><i class="bi bi-trophy-fill"></i></div>
+            <div class="stat-value">{{ avg_marks }}%</div>
+            <div class="stat-label">Average Marks</div>
+        </div>
+    </div>
+    <div class="col-md-4 fade-in-up">
+        <div class="glass-card stat-card success">
+            <div class="stat-icon success"><i class="bi bi-award-fill"></i></div>
+            <div class="stat-value">
+                <span
+                    class="badge-grade {% if grade == 'A+' %}a-plus{% elif grade == 'A' %}a{% elif grade == 'B+' %}b-plus{% elif grade == 'B' %}b{% elif grade == 'C' %}c{% elif grade == 'D' %}d{% else %}f{% endif %}">
+                    {{ grade }}
+                </span>
+            </div>
+            <div class="stat-label">Overall Grade</div>
+        </div>
+    </div>
+    <div class="col-md-4 fade-in-up">
+        <div class="glass-card stat-card warning">
+            <div class="stat-icon warning"><i class="bi bi-calendar-check-fill"></i></div>
+            <div class="stat-value">{{ attendance.attendance_percentage|default:"N/A" }}{% if attendance %}%{% endif %}
+            </div>
+            <div class="stat-label">Attendance</div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart + Marks Table -->
+<div class="row g-4">
+    <div class="col-lg-7 fade-in-up">
+        <div class="glass-card p-4">
+            <h5 class="fw-bold mb-3"><i class="bi bi-bar-chart-fill me-2 text-primary-accent"></i>Subject-wise
+                Performance</h5>
+            {% if marks %}
+            <div class="chart-container">
+                <canvas id="studentChart"></canvas>
+            </div>
+            {% else %}
+            <div class="text-center py-5 text-secondary">
+                <i class="bi bi-graph-up fs-1 d-block mb-2"></i>
+                No marks recorded yet.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="col-lg-5 fade-in-up">
+        <div class="glass-card p-4">
+            <h5 class="fw-bold mb-3"><i class="bi bi-list-check me-2 text-primary-accent"></i>Marks Breakdown</h5>
+            {% if marks %}
+            <div class="table-responsive">
+                <table class="table table-dark-custom mb-0">
+                    <thead>
+                        <tr>
+                            <th>Subject</th>
+                            <th>Exam</th>
+                            <th>Marks</th>
+                            <th>%</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for m in marks %}
+                        <tr>
+                            <td class="fw-semibold">{{ m.subject.subject_name }}</td>
+                            <td><span class="badge bg-secondary bg-opacity-25">{{ m.get_exam_type_display }}</span></td>
+                            <td>{{ m.marks }}/{{ m.max_marks }}</td>
+                            <td>
+                                {% if m.get_percentage >= 75 %}
+                                <span class="text-success fw-bold">{{ m.get_percentage }}%</span>
+                                {% elif m.get_percentage >= 40 %}
+                                <span class="text-warning fw-bold">{{ m.get_percentage }}%</span>
+                                {% else %}
+                                <span class="text-danger fw-bold">{{ m.get_percentage }}%</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5 text-secondary">
+                <i class="bi bi-pencil-square fs-1 d-block mb-2"></i>
+                No marks recorded. <a href="{% url 'add_marks' %}" class="text-primary-accent">Add marks</a>.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if marks %}
+<script>
+    new Chart(document.getElementById('studentChart'), {
+        type: 'bar',
+        data: {
+            labels: {{ subject_names| safe }},
+        datasets: [{
+            label: 'Marks',
+            data: {{ marks_values| safe }},
+        backgroundColor: {{ marks_values| safe }}.map(v =>
+            v >= 75 ? 'rgba(0, 230, 118, 0.7)' :
+                v >= 40 ? 'rgba(255, 171, 64, 0.7)' :
+                    'rgba(255, 82, 82, 0.7)'
+        ),
+        borderColor: {{ marks_values| safe }}.map(v =>
+            v >= 75 ? '#00e676' :
+                v >= 40 ? '#ffab40' :
+                    '#ff5252'
+        ),
+        borderWidth: 2,
+        borderRadius: 8,
+        }]
+    },
+        options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: 100,
+                grid: { color: 'rgba(255,255,255,0.04)' },
+                ticks: { color: '#9e9eb8' },
+            },
+            x: {
+                grid: { display: false },
+                ticks: { color: '#9e9eb8' },
+            }
+        }
+    }
+});
+</script>
+{% endif %}
+{% endblock %}

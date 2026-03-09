@@ -1,0 +1,104 @@
+{% extends "analysis/base.html" %}
+
+{% block title %}{% if editing %}Edit{% else %}Add{% endif %} Marks - PerformanceHub{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="bi bi-pencil-square me-2 text-primary-accent"></i>{% if editing %}Edit{% else %}Add{% endif %} Marks
+    </h1>
+    <p>Record student marks for exams and assessments</p>
+</div>
+
+<div class="row g-4">
+    <!-- Form -->
+    <div class="col-lg-5 fade-in-up">
+        <div class="glass-card p-4">
+            <h5 class="fw-bold mb-3">
+                <i class="bi bi-journal-plus me-2"></i>{% if editing %}Update{% else %}New{% endif %} Entry
+            </h5>
+            <form method="post" novalidate>
+                {% csrf_token %}
+                {% for field in form %}
+                <div class="mb-3">
+                    <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}
+                    <div class="text-danger small mt-1">
+                        {% for error in field.errors %}
+                        <i class="bi bi-exclamation-circle me-1"></i>{{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+                <div class="d-flex gap-2 mt-4">
+                    <button type="submit" class="btn btn-primary-custom">
+                        <i class="bi bi-check-lg me-1"></i> {% if editing %}Update{% else %}Save{% endif %} Marks
+                    </button>
+                    {% if editing %}
+                    <a href="{% url 'add_marks' %}" class="btn btn-outline-custom">Cancel</a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Recent Entries -->
+    <div class="col-lg-7 fade-in-up">
+        <div class="glass-card p-4">
+            <h5 class="fw-bold mb-3"><i class="bi bi-clock-history me-2"></i>Recent Entries</h5>
+            {% if recent_marks %}
+            <div class="table-responsive">
+                <table class="table table-dark-custom mb-0">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Subject</th>
+                            <th>Marks</th>
+                            <th>Type</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for m in recent_marks %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="student-avatar"
+                                        style="width:32px;height:32px;font-size:0.7rem;border-radius:8px;">{{
+                                        m.student.name|first }}</div>
+                                    {{ m.student.name }}
+                                </div>
+                            </td>
+                            <td>{{ m.subject.subject_name }}</td>
+                            <td class="fw-bold">{{ m.marks }}/{{ m.max_marks }}</td>
+                            <td><span class="badge bg-secondary bg-opacity-25">{{ m.get_exam_type_display }}</span></td>
+                            <td>
+                                <div class="d-flex gap-1">
+                                    <a href="{% url 'edit_marks' m.pk %}" class="btn btn-outline-custom btn-sm">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <form method="post" action="{% url 'delete_marks' m.pk %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-danger-custom btn-sm"
+                                            onclick="return confirm('Delete this entry?')">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5 text-secondary">
+                <i class="bi bi-journal fs-1 d-block mb-2"></i>
+                No marks entries yet.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

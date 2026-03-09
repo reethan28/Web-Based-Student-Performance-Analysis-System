@@ -1,0 +1,35 @@
+{% extends "analysis/base.html" %}
+
+{% block title %}Delete Student - PerformanceHub{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-5 col-md-7">
+        <div class="glass-card p-5 text-center fade-in-up">
+            <div class="mb-4">
+                <div class="student-avatar mx-auto mb-3"
+                    style="width:72px;height:72px;font-size:1.5rem;border-radius:18px;">
+                    {{ student.name|first }}
+                </div>
+                <h4 class="fw-bold">Delete Student</h4>
+                <p class="text-secondary">
+                    Are you sure you want to delete <strong class="text-primary-accent">{{ student.name }}</strong>?
+                    <br><small>This will also remove all marks and attendance records.</small>
+                </p>
+            </div>
+
+            <form method="post">
+                {% csrf_token %}
+                <div class="d-flex gap-2 justify-content-center">
+                    <button type="submit" class="btn btn-danger-custom px-4">
+                        <i class="bi bi-trash me-1"></i> Yes, Delete
+                    </button>
+                    <a href="{% url 'student_list' %}" class="btn btn-outline-custom px-4">
+                        <i class="bi bi-arrow-left me-1"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
